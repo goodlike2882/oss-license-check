@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка open source лицензий</title>
+<meta name="description" content="Список сторонних компонентов программы: обязанности по открытым лицензиям, конфликты и отчёт для юриста в Word. Файлы проекта не покидают браузер.">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow"><span>LegalTech</span><span>Open source</span><span>Файлы не покидают браузер</span></div>
+    <h1 class="title">Проверка open source лицензий</h1>
+    <p class="lede">Выберите папку проекта или загрузите lock-файл либо SBOM. Сайт найдёт сторонние компоненты и их лицензии и покажет, какие обязанности и конфликты возникают при вашей модели распространения. Результат можно скачать отчётом в Word.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="h-product">
+      <h2 id="h-product"><span class="n">1</span>Продукт</h2>
+      <div class="f">
+        <label for="p-name">Название</label>
+        <input type="text" id="p-name" autocomplete="off" placeholder="Например, «Учёт договоров»">
+      </div>
+      <div class="f" role="radiogroup" aria-labelledby="l-model">
+        <span class="lbl" id="l-model">Как продукт попадает к пользователям</span>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="model" value="dist" checked><b>Копии передаются</b><small>Установка у клиента, мобильное или десктопное приложение, поставка на сервер заказчика, прошивка устройства.</small></label>
+          <label class="opt"><input type="radio" name="model" value="saas"><b>Онлайн-сервис</b><small>Пользователи работают через браузер или API, копии программы не передаются.</small></label>
+          <label class="opt"><input type="radio" name="model" value="internal"><b>Только внутри компании</b><small>Программой пользуются работники, третьим лицам доступ не даётся.</small></label>
+        </div>
+      </div>
+      <div class="f">
+        <label for="p-lic">Лицензия продукта</label>
+        <select id="p-lic"></select>
+        <small id="p-lic-hint"></small>
+      </div>
+      <label class="check"><input type="checkbox" id="p-comm" checked> Продукт используется в коммерческой деятельности</label>
+    </section>
+
+    <section class="card" aria-labelledby="h-src">
+      <h2 id="h-src"><span class="n">2</span>Компоненты</h2>
+      <div class="actions">
+        <label class="btn primary" for="in-folder">Выбрать папку проекта</label>
+        <input type="file" id="in-folder" webkitdirectory directory multiple hidden>
+        <label class="btn" for="in-files">Загрузить файлы</label>
+        <input type="file" id="in-files" multiple hidden accept=".json,.lock,.txt,.xml,.mod,METADATA,PKG-INFO">
+        <button type="button" class="btn" id="btn-add">Добавить вручную</button>
+        <button type="button" class="btn" id="btn-demo">Показать пример</button>
+      </div>
+      <form class="add-form" id="add-form" hidden>
+        <div class="f"><label for="a-name">Компонент</label><input type="text" id="a-name" autocomplete="off"></div>
+        <div class="f"><label for="a-ver">Версия</label><input type="text" id="a-ver" autocomplete="off"></div>
+        <div class="f"><label for="a-lic">Лицензия</label><input type="text" id="a-lic" list="lic-list" autocomplete="off" placeholder="MIT, GPL-3.0-only…"></div>
+        <div class="f"><label for="a-use">Использование</label><select id="a-use"><option value="lib">библиотека в составе продукта</option><option value="static">встроен в код или статическая сборка</option><option value="separate">отдельная программа в комплекте</option><option value="dev">инструмент разработки</option></select></div>
+        <button type="submit" class="btn">Добавить</button>
+      </form>
+      <div class="drop" id="drop">Или перетащите сюда lock-файл, SBOM или файл лицензии</div>
+      <p class="formats">Читает <code>package-lock.json</code>, <code>node_modules</code>, <code>composer.lock</code>, <code>requirements.txt</code> и установленные пакеты Python, <code>pom.xml</code>, <code>go.mod</code>, <code>Cargo.lock</code>, папку <code>vendor</code>, SBOM в форматах CycloneDX и SPDX (JSON), файлы LICENSE и пометки <code>SPDX-License-Identifier</code> в исходниках.</p>
+      <p class="privacy">Браузер может спросить, разрешить ли сайту «загрузить» файлы. Они не отправляются на сервер: страница читает их в памяти и сохраняет только список компонентов.</p>
+      <div class="log" id="log" hidden aria-live="polite"></div>
+    </section>
+  </div>
+
+  <section class="card result" aria-labelledby="h-res">
+    <h2 id="h-res"><span class="n">3</span>Результат</h2>
+    <div id="res-empty" class="empty">Добавьте компоненты: выберите папку проекта, загрузите файлы или нажмите «Показать пример».</div>
+    <div id="res" hidden>
+      <div class="tiles" id="tiles"></div>
+      <div class="issues" id="issues"></div>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Поиск по названию или лицензии" aria-label="Поиск по компонентам">
+        <div class="actions">
+          <button type="button" class="btn" id="btn-clear">Очистить список</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Оценка</th><th>Компонент</th><th>Лицензия</th><th class="col-use">Использование</th><th class="col-mod">Изменялся</th><th><span class="sr">Удалить</span></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn more" id="btn-more" hidden></button>
+      <div class="downloads">
+        <button type="button" class="btn primary" id="btn-docx">Скачать отчёт .docx</button>
+        <button type="button" class="btn" id="btn-csv">Скачать таблицу CSV</button>
+        <span class="hint">Нажмите на строку, чтобы увидеть объяснение и что сделать.</span>
+      </div>
+    </div>
+  </section>
+
+  <datalist id="lic-list"></datalist>
+
+  <footer class="foot">
+    <p>Оценка строится по правилам для типовых случаев и не является юридическим заключением. Спорные случаи должен оценить юрист.</p>
+    <p class="foot-links"><a href="terms.html">Условия использования</a><a href="privacy.html">Политика конфиденциальности</a><a href="https://github.com/goodlike2882/oss-license-check">Код на GitHub</a><a href="https://goodlike2882.github.io/contract-constructor/">Конструктор договоров</a></p>
+    <p>Владелец сайта: Хорохорин Владислав, Москва · <a href="mailto:vladhorohorin2@gmail.com">vladhorohorin2@gmail.com</a></p>
+  </footer>
+</div>
+<script src="assets/js/jszip.min.js"></script>
+<script src="assets/licenses.js"></script>
+<script src="assets/scanner.js"></script>
+<script src="assets/report.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
