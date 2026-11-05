@@ -76,3 +76,13 @@ test("открытый продукт под MIT с GPL-кодом — пров�
 test("в SaaS GPL-компоненты не порождают конфликтов продукта", () => {
   assert.equal(product([c("GPL-2.0-only"), c("Apache-2.0")], SAAS).length, 0);
 });
+
+test("AGPL без изменений как отдельная программа в SaaS — без обязанностей по разделу 13", () => {
+  assert.equal(Lic.assessComp(c("AGPL-3.0-only", "separate"), SAAS).level, 0);
+  assert.equal(Lic.assessComp(c("AGPL-3.0-only", "separate", { modified: true }), SAAS).level, 2);
+});
+
+test("AGPL внутри компании: без изменений — нет обязанностей, встроена в продукт — обязанности", () => {
+  assert.equal(Lic.assessComp(c("AGPL-3.0-only", "separate"), INTERNAL).level, 0);
+  assert.equal(Lic.assessComp(c("AGPL-3.0-only", "lib"), INTERNAL).level, 1);
+});
