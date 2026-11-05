@@ -45,6 +45,10 @@
   def("MIT-0", "MIT No Attribution", "pd", []);
   def("WTFPL", "WTFPL", "pd", []);
   def("PublicDomain", "Общественное достояние", "pd", [], { note: "Автор заявил, что передаёт произведение в общественное достояние. В России автор не может отказаться от исключительного права заявлением, поэтому такое заявление рассматривают как разрешение использовать без условий." });
+  def("CPL-1.0", "Common Public License 1.0", "weak", ["notice", "fileCopyleft", "patent"], { gplNo: true });
+  def("JSON", "JSON License", "restricted", ["notice", "terms"], { gplNo: true, note: "Лицензия JSON повторяет MIT, но добавляет условие «программа должна использоваться во благо, а не во зло». Неопределённое условие делает её непригодной для многих компаний: юристы Google, IBM и других запрещали такие компоненты." });
+  def("W3C", "W3C Software Notice and License", "perm", ["notice", "changes"]);
+  def("Google-Patent-Grant", "Дополнительное разрешение Google на патенты", "pd", [], { note: "Это не лицензия, а дополнительное разрешение на использование патентов к основной лицензии компонента (обычно BSD-3-Clause)." });
   def("MIT X11 ISC BlueOak-1.0.0 PostgreSQL Unicode-DFS-2016 Unicode-3.0 NCSA", "", "perm", ["notice"]);
   L.MIT.name = "MIT"; L.X11.name = "X11"; L.ISC.name = "ISC"; L["BlueOak-1.0.0"].name = "Blue Oak Model 1.0.0";
   L.PostgreSQL.name = "PostgreSQL"; L["Unicode-DFS-2016"].name = "Unicode License 2016"; L["Unicode-3.0"].name = "Unicode License v3"; L.NCSA.name = "University of Illinois/NCSA";
@@ -89,7 +93,7 @@
   const EXC = {
     "classpath-exception-2.0": "weak", "gcc-exception-3.1": "perm", "gcc-exception-2.0": "perm",
     "llvm-exception": "perm", "autoconf-exception-3.0": "perm", "autoconf-exception-2.0": "perm",
-    "bison-exception-2.2": "perm", "font-exception-2.0": "perm", "universal-foss-exception-1.0": "weak",
+    "bison-exception-2.2": "perm", "font-exception-2.0": "perm",
   };
 
   // ---------- распознавание названия лицензии ----------
@@ -99,23 +103,23 @@
     [/^(the )?mit( license| licence)?$|^expat$|^mit\/x11$/, "MIT"],
     [/^isc( license)?( \(iscl\))?$/, "ISC"],
     [/^(the )?apache( software)?( license| licence)?,?( version)? ?2(\.0)?$|^apache-2$|^asl ?2(\.0)?$|^apache software license$/, "Apache-2.0"],
-    [/^(new |modified |revised |simplified )?bsd( license| licence)?$/, "BSD-3-Clause"],
+    [/^(the )?(new |modified |revised )?bsd( license)?$|^bsd 3-clause (new )?license.*$|^bsd 3-clause license w\/nuclear disclaimer$/, "BSD-3-Clause"],
+    [/^eclipse distribution license.*$|^edl( v?1\.0)?$/, "BSD-3-Clause"],
+    [/^(the )?apache software licenses?$|^alv?2$|^asf 2\.0$|^apache license 2\.0$/, "Apache-2.0"],
+    [/^common development and distribution license( cddl)?( v?1\.0)?$/, "CDDL-1.0"],
+    [/^common development and distribution license( cddl)? v?1\.1$/, "CDDL-1.1"],
+    [/^asl( 2\.0)?$/, "Apache-2.0"], [/^cpl( 1\.0)?$|^common public license.*$/, "CPL-1.0"], [/^json( license)?$/, "JSON"],
+    [/^bouncy castle license$/, "MIT"],
+    [/^(the )?w3c( software notice and license| software license| license)?$/, "W3C"],
+    [/^googlepatentclause$|^google patent (clause|grant)$/, "Google-Patent-Grant"],
     [/^bsd[- ]?2([- ]clause)?( license)?$|^freebsd$|^simplified bsd$/, "BSD-2-Clause"],
     [/^bsd[- ]?3([- ]clause)?( license)?$|^new bsd$/, "BSD-3-Clause"],
-    [/^(gnu )?(general public license|gpl) ?v?2\+$|^gpl-2\.0\+$|^gplv2 or later$/, "GPL-2.0-or-later"],
-    [/^(gnu )?(general public license|gpl) ?v?2(\.0)?( only)?$|^gpl-2\.0$/, "GPL-2.0-only"],
-    [/^(gnu )?(general public license|gpl) ?v?3\+$|^gpl-3\.0\+$|^gplv3 or later$/, "GPL-3.0-or-later"],
-    [/^(gnu )?(general public license|gpl) ?v?3(\.0)?( only)?$|^gpl-3\.0$/, "GPL-3.0-only"],
-    [/^(gnu )?(gpl|general public license)$/, "GPL"],
-    [/^(gnu )?(lesser|library) (general public license|gpl) ?v?2(\.1)?\+?$|^lgpl ?v?2(\.1)?\+?$|^lgpl-2\.1\+$/, "LGPL-2.1-or-later"],
-    [/^(gnu )?(lesser|library) (general public license|gpl) ?v?3(\.0)?\+?$|^lgpl ?v?3(\.0)?\+?$|^lgpl-3\.0\+$/, "LGPL-3.0-or-later"],
-    [/^(gnu )?(lgpl|lesser general public license)$/, "LGPL-2.1-or-later"],
-    [/^(gnu )?(affero|agpl)( general public license)? ?v?3(\.0)?\+?$|^agpl-3\.0\+$|^agpl$/, "AGPL-3.0-or-later"],
     [/^(mozilla public license|mpl) ?2(\.0)?( \(mpl 2\.0\))?$/, "MPL-2.0"],
     [/^(mozilla public license|mpl) ?1\.1$/, "MPL-1.1"],
     [/^(eclipse public license|epl) ?(v|version )?1(\.0)?$/, "EPL-1.0"],
     [/^(eclipse public license|epl) ?(v|version )?2(\.0)?$/, "EPL-2.0"],
-    [/^cddl( ?1\.[01])?$/, "CDDL-1.0"],
+    [/^cddl( ?v?1\.0)?$/, "CDDL-1.0"], [/^cddl ?v?1\.1$/, "CDDL-1.1"],
+    [/^cddl\+gpl.*$/, "CDDL-1.0"],
     [/^(python software foundation|psf)( license)?( \(psfl\))?$|^psfl$/, "PSF-2.0"],
     [/^boost( software license)?( 1\.0)?$/, "BSL-1.0"],
     [/^zlib( license)?$/, "Zlib"],
@@ -143,6 +147,21 @@
     [/eclipse public license 1\.0/, "EPL-1.0"], [/other\/proprietary/, "Proprietary"],
   ];
 
+  // Семейство GNU: «GNU Lesser General Public License, Version 2.1», «GPLv2+», «lgpl_v2_1», «AGPL-3.0».
+  // Без «or later» версия считается единственной: это осторожное прочтение.
+  function gnu(t) {
+    const fam = /affero|agpl/.test(t) ? "AGPL" : /lesser|library|lgpl/.test(t) ? "LGPL" : /general public|gpl/.test(t) ? "GPL" : null;
+    if (!fam) return null;
+    const later = /\+|or later|or greater|or any later/.test(t);
+    const m = t.replace(/[_]/g, ".").match(/(?:v|version|gpl|license|-| )\.?\s*([23])(?:\.([01]))?/);
+    let ver = m ? m[1] + "." + (m[2] || (fam === "LGPL" && m[1] === "2" ? "1" : "0")) : null;
+    if (!ver) return fam === "GPL" ? "GPL" : fam === "LGPL" ? "LGPL-2.1-or-later" : "AGPL-3.0-or-later";
+    if (fam === "AGPL" && ver !== "3.0") return null;
+    if (fam === "GPL" && !["2.0", "3.0"].includes(ver)) return null;
+    if (fam === "LGPL" && !["2.0", "2.1", "3.0"].includes(ver)) return null;
+    return `${fam}-${ver}-${later ? "or-later" : "only"}`;
+  }
+
   // Одно название лицензии → SPDX-идентификатор или null.
   function normOne(raw) {
     let s = String(raw || "").trim();
@@ -152,31 +171,37 @@
     let t = s.toLowerCase().replace(/[“”"']/g, "").replace(/\s+/g, " ").trim();
     if (/^license :: /.test(t)) { for (const [re, id] of CLASSIFIER) if (re.test(t)) return id; return null; }
     if (byLower[t]) return byLower[t];
-    const t2 = t.replace(/ license$| licence$/, "");
-    if (byLower[t2]) return byLower[t2];
-    for (const [re, id] of ALIAS) if (re.test(t) || re.test(t2)) return id;
-    if (/^gpl-2\.0\+$/.test(t)) return "GPL-2.0-or-later";
-    if (/^(l?a?gpl)-([23])\.([01])$/.test(t)) return t.toUpperCase().replace(/^(L?A?GPL)/, "$1") + "-only";
+    // Приводим словесные названия к одному виду: без скобок с сокращениями, запятых и слова «licence».
+    const c = t.replace(/licence/g, "license").replace(/\((?:[a-z0-9 .+-]+)\)/g, " ").replace(/[,;:]+/g, " ").replace(/\bversion\b/g, "").replace(/\s+/g, " ").trim();
+    const t2 = c.replace(/ license$/, "").trim();
+    if (byLower[c] || byLower[t2]) return byLower[c] || byLower[t2];
+    for (const [re, id] of ALIAS) if (re.test(t) || re.test(c) || re.test(t2)) return id;
+    if (/gpl|general public/.test(c)) { const g = gnu(c); if (g) return g; }
     return null;
   }
 
   // Разбор выражения SPDX: «MIT OR Apache-2.0», «(GPL-2.0-only WITH Classpath-exception-2.0)».
   // Возвращает варианты (OR), каждый — список терминов (AND): {id, exc, raw}.
   function parseExpr(raw) {
-    const s = String(raw || "").trim();
+    let s = String(raw || "").trim();
     if (!s) return [];
+    // Слова «or» и «and» внутри названий не должны делить выражение.
+    s = s.replace(/,?\s+or\s+(later|greater|any later( version)?)/gi, "+").replace(/development and distribution/gi, "development&distribution");
     const flat = s.replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
     const orParts = flat.split(/ or /i);
-    if (orParts.length === 1 && / and /i.test(flat) === false && / with /i.test(flat) === false) {
+    if (orParts.length === 1 && !/ and /i.test(flat) && !/ with /i.test(flat)) {
       // «MIT/Apache-2.0» и «MIT, Apache-2.0» в старых пакетах означают выбор.
       const sl = flat.split(/\s*\/\s*|\s*,\s*/).filter(Boolean);
       if (sl.length > 1 && sl.every((x) => normOne(x))) return sl.map((x) => [term(x)]);
     }
-    return orParts.map((p) => p.split(/ and /i).map(term));
+    return orParts.map((p) => p.split(/ and | \+ (?=[a-z])/i).map(term));
   }
   function term(x) {
-    const [lic, exc] = x.split(/ with /i).map((v) => v && v.trim());
-    return { id: normOne(lic), exc: exc ? exc.toLowerCase() : null, raw: x.trim() };
+    x = x.replace(/development&distribution/g, "development and distribution").trim();
+    let exc = null, lic = x;
+    if (/classpath/i.test(x)) { exc = "classpath-exception-2.0"; lic = x.replace(/[\s-]*(with)?[\s-]*(the )?(gnu )?classpath[\s-]*exception([\s-]*2\.0)?/i, ""); }
+    else if (/ with /i.test(x)) { const [a, b] = x.split(/ with /i); lic = a; exc = b.trim().toLowerCase(); }
+    return { id: normOne(lic), exc, raw: x };
   }
 
   // Порядок рисков категорий для выбора варианта в «A OR B».

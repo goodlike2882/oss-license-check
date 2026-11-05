@@ -122,7 +122,9 @@
     const out = [];
     const walk = (list) => (list || []).forEach((c) => {
       let l = "";
-      for (const x of c.licenses || []) { if (x.expression) l = x.expression; else if (x.license) l = l ? l + " AND " + (x.license.id || x.license.name) : x.license.id || x.license.name || ""; }
+      // Несколько лицензий в списке CycloneDX обычно переносятся из POM-файла, где они означают выбор (двойное лицензирование).
+      const parts = (c.licenses || []).map((x) => x.expression || (x.license && (x.license.id || x.license.name)) || "").filter(Boolean);
+      l = parts.length > 1 ? parts.map((v) => `(${v})`).join(" OR ") : parts[0] || "";
       out.push(comp(c.group ? `${c.group}/${c.name}` : c.name, c.version, l, c.scope === "excluded" ? "dev" : "lib", src));
       walk(c.components);
     });
