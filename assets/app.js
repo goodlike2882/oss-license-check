@@ -228,6 +228,22 @@
     try { saveBlob(await window.Report.docx(ordered()), fileBase() + ".docx"); } finally { b.disabled = false; }
   });
   $("#btn-csv").addEventListener("click", () => saveBlob(window.Report.csv(ordered()), fileBase() + ".csv"));
+  $("#btn-notices").addEventListener("click", async () => {
+    const b = $("#btn-notices"); b.disabled = true;
+    try {
+      const d = ordered();
+      const texts = {};
+      await Promise.all(window.Report.noticeIds(d).map(async (id) => {
+        try { const r = await fetch(`assets/license-texts/${encodeURIComponent(id)}.txt`); if (r.ok) texts[id] = await r.text(); } catch (e) { }
+      }));
+      const n = window.Report.notices(d, texts);
+      saveBlob(new Blob([n.text], { type: "text/plain;charset=utf-8" }), "THIRD-PARTY-NOTICES.txt");
+      const parts = [`Файл уведомлений: компонентов ${n.count}, лицензий ${window.Report.noticeIds(d).length}.`];
+      if (n.miss) parts.push(`Компонентов без строки Copyright: ${n.miss}. Она подставляется, если выбрать папку проекта с установленными пакетами, иначе её нужно вписать вручную.`);
+      if (n.skipped) parts.push(`Не включены компоненты без установленной или открытой лицензии: ${n.skipped}.`);
+      log(parts.join(" "));
+    } finally { b.disabled = false; }
+  });
 
   load(); syncForm(); render();
 })();

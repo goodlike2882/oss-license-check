@@ -55,6 +55,21 @@
     return null;
   }
 
+  // Строки с уведомлением об авторском праве из файла лицензии компонента.
+  // Шаблонные строки текста лицензии («copyright holders», заглушки в угловых скобках, FSF) пропускаются.
+  function copyrights(text) {
+    const out = [];
+    for (const line of String(text || "").split(/\r?\n/).slice(0, 400)) {
+      const l = line.trim();
+      if (!/^(copyright\b|\(c\)|©)/i.test(l)) continue;
+      if (/<[^>]+>|\[[^\]]*(year|name|owner)[^\]]*\]|holders?\b|owners?\b|notice|free software foundation|statement|license/i.test(l)) continue;
+      if (l.length > 200 || !/[a-zа-я0-9]{2}/i.test(l.replace(/^(copyright|\(c\)|©)/gi, ""))) continue;
+      if (!out.includes(l)) out.push(l);
+      if (out.length >= 5) break;
+    }
+    return out;
+  }
+
   // ---------- форматы файлов ----------
   const comp = (name, version, license, use, src) => ({ name, version: version || "", license: license || "", use: use || "lib", src, modified: false });
   const lic = (v) => {
@@ -205,12 +220,16 @@
         const j = JSON.parse(await read(f));
         if (!j.name || !j.version) continue;
         let l = lic(j.license || j.licenses);
-        let how = "package.json";
-        if (!l || /^see licen[cs]e in/i.test(l)) {
-          const lf = licFor(dir);
-          if (lf) { const d = detectText(await read(lf)); if (d) { l = d.id; how = "текст лицензии"; } }
+        let how = "package.json", cr = [];
+        const lf = licFor(dir);
+        if (lf) {
+          const txt = await read(lf);
+          cr = copyrights(txt);
+          if (!l || /^see licen[cs]e in/i.test(l)) { const d = detectText(txt); if (d) { l = d.id; how = "текст лицензии"; } }
         }
-        found.push(comp(j.name, j.version, l, devNames.has(j.name) ? "dev" : "lib", "node_modules · " + how));
+        const c = comp(j.name, j.version, l, devNames.has(j.name) ? "dev" : "lib", "node_modules · " + how);
+        if (cr.length) c.copyright = cr;
+        found.push(c);
       } catch (e) { /* битый package.json пропускаем */ }
       tick("node_modules");
     }
@@ -220,10 +239,12 @@
     for (const f of py) {
       try {
         const c = parsePyMeta(await read(f), "site-packages");
-        if (!c.license) {
-          const dir = rel(f).replace(/[^/]+$/, "");
-          const lf = licFor(dir);
-          if (lf) { const d = detectText(await read(lf)); if (d) { c.license = d.id; c.src = "site-packages · текст лицензии"; } }
+        const dir = rel(f).replace(/[^/]+$/, "");
+        const lf = licFor(dir);
+        if (lf) {
+          const txt = await read(lf);
+          const cr = copyrights(txt); if (cr.length) c.copyright = cr;
+          if (!c.license) { const d = detectText(txt); if (d) { c.license = d.id; c.src = "site-packages · текст лицензии"; } }
         }
         if (c.name) found.push(c);
       } catch (e) { }
@@ -235,10 +256,11 @@
     for (const f of vend) {
       const p = rel(f), dir = p.slice(p.indexOf("vendor/") + 7, p.lastIndexOf("/"));
       if (found.some((c) => c.name === dir && c.license)) continue;
-      const d = detectText(await read(f));
+      const txt = await read(f);
+      const d = detectText(txt), cr = copyrights(txt);
       const ex = found.find((c) => c.name === dir);
-      if (ex) { if (d) { ex.license = d.id; ex.src += " · vendor"; } }
-      else found.push(comp(dir, "", d ? d.id : "", "lib", "vendor · текст лицензии"));
+      if (ex) { if (d) { ex.license = d.id; ex.src += " · vendor"; } if (cr.length) ex.copyright = cr; }
+      else { const c = comp(dir, "", d ? d.id : "", "lib", "vendor · текст лицензии"); if (cr.length) c.copyright = cr; found.push(c); }
       tick("vendor");
     }
 
@@ -279,6 +301,7 @@
       const ex = m.get(k);
       if (!ex) { m.set(k, { ...c, version: v }); continue; }
       if (!ex.license && c.license) { ex.license = c.license; ex.src = c.src; }
+      if (!ex.copyright && c.copyright) ex.copyright = c.copyright;
       if (ex.use === "dev" && c.use !== "dev") ex.use = c.use;
     }
     // Если версия известна, записи без версии (из package.json) поглощаются.
@@ -290,5 +313,5 @@
     return [...m.values()];
   }
 
-  window.Scan = { parseFile, scanFolder, detectText, dedupe };
+  window.Scan = { parseFile, scanFolder, detectText, dedupe, copyrights };
 })();

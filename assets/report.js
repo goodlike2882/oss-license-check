@@ -114,5 +114,38 @@
     return new Blob(["﻿" + rows.map((r) => r.map(q).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
   }
 
-  window.Report = { docx, csv, LEVEL_RU, MODEL_RU };
+  // Файл уведомлений: компоненты, их копирайты и тексты лицензий (по одному тексту на лицензию).
+  // texts: {id: текст} — загружаются из assets/license-texts.
+  const NO_TEXT = new Set(["GPL", "PublicDomain", "Proprietary", "NONE", "Commons-Clause", "Google-Patent-Grant"]);
+  function noticeIds(d) {
+    const ids = new Set();
+    noticeComps(d).forEach(({ r }) => r.lic.terms.forEach((t) => { if (t.id && !NO_TEXT.has(t.id)) ids.add(t.id); if (t.exc === "classpath-exception-2.0") ids.add("Classpath-exception-2.0"); if (t.exc === "llvm-exception") ids.add("LLVM-exception"); }));
+    return [...ids].sort();
+  }
+  function noticeComps(d) {
+    return d.comps.map((c, i) => ({ c, r: d.res[i] })).filter(({ c, r }) => c.use !== "dev" && !["unknown", "none", "proprietary"].includes(r.lic.cat))
+      .sort((a, b) => a.c.name.localeCompare(b.c.name));
+  }
+  function notices(d, texts) {
+    const line = "=".repeat(78), thin = "-".repeat(78);
+    const list = noticeComps(d);
+    const out = [];
+    out.push(`СТОРОННИЕ КОМПОНЕНТЫ${d.product.name ? ` В СОСТАВЕ «${d.product.name}»` : ""}`, "THIRD-PARTY SOFTWARE NOTICES", "",
+      "Продукт включает перечисленные ниже компоненты. Они распространяются их правообладателями на условиях",
+      "указанных лицензий. Тексты лицензий приведены в конце файла.", `Сформировано: ${d.date}`, "", line);
+    let miss = 0;
+    for (const { c, r } of list) {
+      out.push("", `${c.name}${c.version ? " " + c.version : ""}`, `Лицензия / License: ${r.lic.label}`);
+      if (c.copyright && c.copyright.length) c.copyright.forEach((x) => out.push(x));
+      else { out.push("Copyright: [уведомление не найдено — возьмите его из файла LICENSE компонента]"); miss++; }
+    }
+    out.push("", line, "", "ТЕКСТЫ ЛИЦЕНЗИЙ / LICENSE TEXTS");
+    for (const id of noticeIds(d)) {
+      out.push("", thin, `${id}${L[id] ? " — " + L[id].name : ""}`, thin, "", texts[id] ? texts[id].trim() : "[текст лицензии не найден, приложите его вручную]");
+    }
+    const skipped = d.comps.filter((c, i) => c.use !== "dev" && ["unknown", "none", "proprietary"].includes(d.res[i].lic.cat));
+    return { text: out.join("\n") + "\n", count: list.length, miss, skipped: skipped.length };
+  }
+
+  window.Report = { docx, csv, notices, noticeIds, LEVEL_RU, MODEL_RU };
 })();
