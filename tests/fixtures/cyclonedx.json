@@ -1,0 +1,1 @@
+{"bomFormat":"CycloneDX","components":[{"name":"log4j-core","group":"org.apache.logging.log4j","version":"2.20.0","licenses":[{"license":{"id":"Apache-2.0"}}]},{"name":"mysql-connector-j","version":"8.0.33","licenses":[{"expression":"GPL-2.0-only WITH Universal-FOSS-exception-1.0"}]}]}
